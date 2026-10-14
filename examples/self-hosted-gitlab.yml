@@ -1,0 +1,29 @@
+# Mirror to a self-hosted GitLab server, limited to some branches.
+name: Mirror to self-hosted GitLab
+
+on:
+  push:
+    branches: [main, 'release/**']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    # Use a self-hosted runner if your GitLab is not reachable from the internet.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: FahimFBA/github-to-gitlab-sync@v1
+        with:
+          gitlab-token: ${{ secrets.GITLAB_TOKEN }}
+          gitlab-url: https://gitlab.example.com
+          gitlab-repo: platform/team/my-project
+          # Project and group tokens accept any username. oauth2 is fine.
+          gitlab-username: oauth2
+          # Names or glob patterns, comma separated.
+          branches: main,release/*

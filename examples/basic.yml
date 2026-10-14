@@ -1,0 +1,22 @@
+# Mirror every push on main to GitLab.
+name: Mirror to GitLab
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: FahimFBA/github-to-gitlab-sync@v1
+        with:
+          gitlab-token: ${{ secrets.GITLAB_TOKEN }}
+          gitlab-repo: my-group/my-project

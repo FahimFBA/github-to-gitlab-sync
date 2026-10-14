@@ -1,0 +1,76 @@
+name: 'GitHub to GitLab Sync'
+description: 'Mirror a GitHub repository to GitLab (gitlab.com or self-hosted): branches, tags, optional prune, dry run.'
+author: 'Md. Fahim Bin Amin'
+
+branding:
+  icon: 'refresh-cw'
+  color: 'orange'
+
+inputs:
+  gitlab-token:
+    description: 'GitLab personal, project, or group access token with the write_repository scope. Pass it from a GitHub secret.'
+    required: true
+  gitlab-repo:
+    description: 'GitLab project path, like group/project or group/subgroup/project. The project must already exist.'
+    required: true
+  gitlab-url:
+    description: 'Base URL of the GitLab server. Change it for self-hosted GitLab.'
+    required: false
+    default: 'https://gitlab.com'
+  gitlab-username:
+    description: 'Username sent with the token. oauth2 works for personal, project, and group tokens.'
+    required: false
+    default: 'oauth2'
+  branches:
+    description: '"all", or a comma separated list of branch names or glob patterns, for example "main,release/*".'
+    required: false
+    default: 'all'
+  sync-tags:
+    description: 'Push tags to GitLab.'
+    required: false
+    default: 'true'
+  force:
+    description: 'Overwrite branches and tags on GitLab that diverged from GitHub. Branches use --force-with-lease, tags use --force.'
+    required: false
+    default: 'false'
+  prune:
+    description: 'DESTRUCTIVE. Delete branches and tags on GitLab that no longer exist on GitHub. Branches are only pruned if they match the branches filter.'
+    required: false
+    default: 'false'
+  dry-run:
+    description: 'Show what would be pushed or deleted without changing GitLab.'
+    required: false
+    default: 'false'
+  lfs:
+    description: 'Also copy Git LFS objects to GitLab. Needs git-lfs on the runner. When false, only LFS pointer files are pushed.'
+    required: false
+    default: 'false'
+
+outputs:
+  status:
+    description: 'success, no-changes, or failed.'
+    value: ${{ steps.sync.outputs.status }}
+  pushed-refs:
+    description: 'Refs pushed to GitLab, one per line. Empty on a dry run.'
+    value: ${{ steps.sync.outputs.pushed-refs }}
+  pruned-refs:
+    description: 'Refs deleted from GitLab by prune, one per line. Empty on a dry run.'
+    value: ${{ steps.sync.outputs.pruned-refs }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: sync
+      shell: bash
+      env:
+        INPUT_GITLAB_TOKEN: ${{ inputs.gitlab-token }}
+        INPUT_GITLAB_REPO: ${{ inputs.gitlab-repo }}
+        INPUT_GITLAB_URL: ${{ inputs.gitlab-url }}
+        INPUT_GITLAB_USERNAME: ${{ inputs.gitlab-username }}
+        INPUT_BRANCHES: ${{ inputs.branches }}
+        INPUT_SYNC_TAGS: ${{ inputs.sync-tags }}
+        INPUT_FORCE: ${{ inputs.force }}
+        INPUT_PRUNE: ${{ inputs.prune }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+        INPUT_LFS: ${{ inputs.lfs }}
+      run: bash "${GITHUB_ACTION_PATH}/scripts/sync.sh"

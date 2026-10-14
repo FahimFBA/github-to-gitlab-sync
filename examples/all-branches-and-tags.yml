@@ -1,0 +1,33 @@
+# Mirror every branch and tag whenever any of them changes.
+name: Mirror all branches and tags to GitLab
+
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  delete:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    # Only one mirror run at a time, and always finish the last one.
+    concurrency:
+      group: gitlab-mirror
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: FahimFBA/github-to-gitlab-sync@v1
+        with:
+          gitlab-token: ${{ secrets.GITLAB_TOKEN }}
+          gitlab-repo: my-group/my-project
+          branches: all
+          sync-tags: true
+          # Delete GitLab branches and tags that were deleted on GitHub.
+          # Destructive, so try it with dry-run: true first.
+          prune: true
